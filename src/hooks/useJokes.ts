@@ -118,18 +118,10 @@ export const useJokes = () => {
     const handleRefresh = async (id: number) => {
 
         try {
-            console.log(combinedJokes, 'local JOKES');
-
             const storedJokes: Joke[] = JSON.parse(localStorage.getItem('userJokes') || '[]');
             const jokeIndexInLocalStorage = storedJokes.findIndex((joke: Joke) => joke.id === id);
             const jokeIndexInState = combinedJokes.findIndex((joke: Joke) => joke.id === id);
-
-            console.log(jokeIndexInLocalStorage, 'jokeIndexInLocalStorage');
-            console.log(jokeIndexInState, 'jokeIndexInState');
-
             const newJoke = await dispatch(fetchRandomJokeThunk()).unwrap();
-            console.log(newJoke, 'new joke add');
-
             if (newJoke) {
                 if (jokeIndexInState !== -1) {
                     dispatch(deleteJoke(id));
@@ -155,7 +147,6 @@ export const useJokes = () => {
         } catch (error) {
             console.error('Error fetching new joke:', error);
         } finally {
-            console.log('refresh complete');
         }
     };
     return {
