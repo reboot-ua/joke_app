@@ -1,73 +1,84 @@
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { fetchRandomJoke, fetchTenJokes } from './api/jokesApi';
 import { JokesState, Joke } from './jokesTypes';
 
 const initialState: JokesState = {
-    jokes: [],
-    userJokes: JSON.parse(localStorage.getItem('userJokes') || '[]'),
-    status: 'idle',
-    error: null,
+  jokes: [],
+  userJokes: JSON.parse(localStorage.getItem('userJokes') || '[]'),
+  status: 'idle',
+  error: null,
 };
 
 export const fetchTenJokesThunk = createAsyncThunk(
-    'jokes/fetchTenJokes',
-    async (_, { getState }) => {
-        const state = getState() as { jokes: JokesState };
-        const existingIds = [...state.jokes.jokes, ...state.jokes.userJokes].map(j => j.id);
-        const jokes = await fetchTenJokes();
-        return jokes.filter(joke => !existingIds.includes(joke.id));
-    }
+  'jokes/fetchTenJokes',
+  async (_, { getState }) => {
+    const state = getState() as { jokes: JokesState };
+    const existingIds = [...state.jokes.jokes, ...state.jokes.userJokes].map(
+      (j) => j.id,
+    );
+    const jokes = await fetchTenJokes();
+    return jokes.filter((joke) => !existingIds.includes(joke.id));
+  },
 );
 
 export const fetchRandomJokeThunk = createAsyncThunk(
-    'jokes/fetchRandomJoke',
-    async (_, { getState }) => {
-        const state = getState() as { jokes: JokesState };
-        const existingIds = [...state.jokes.jokes, ...state.jokes.userJokes].map(j => j.id);
-        const joke = await fetchRandomJoke();
-        return joke && !existingIds.includes(joke.id) ? joke : null;
-    }
+  'jokes/fetchRandomJoke',
+  async (_, { getState }) => {
+    const state = getState() as { jokes: JokesState };
+    const existingIds = [...state.jokes.jokes, ...state.jokes.userJokes].map(
+      (j) => j.id,
+    );
+    const joke = await fetchRandomJoke();
+    return joke && !existingIds.includes(joke.id) ? joke : null;
+  },
 );
 
 const jokesSlice = createSlice({
-    name: 'jokes',
-    initialState,
-    reducers: {
-        addJoke: (state, action) => {
-            if (!state.userJokes.some(j => j.id === action.payload.id)) {
-                state.userJokes.push(action.payload);
-            }
-        },
-        deleteJoke: (state, action) => {
-            state.jokes = state.jokes.filter(j => j.id !== action.payload);
-            state.userJokes = state.userJokes.filter(j => j.id !== action.payload);
-        },
-        refreshJoke: (state, action: PayloadAction<{ oldId: number; newJoke: Joke }>) => {
-            state.jokes = state.jokes.filter(j => j.id !== action.payload.oldId);
-            state.userJokes = state.userJokes.filter(j => j.id !== action.payload.oldId);
+  name: 'jokes',
+  initialState,
+  reducers: {
+    addJoke: (state, action) => {
+      if (!state.userJokes.some((j) => j.id === action.payload.id)) {
+        state.userJokes.push(action.payload);
+      }
+    },
+    deleteJoke: (state, action) => {
+      state.jokes = state.jokes.filter((j) => j.id !== action.payload);
+      state.userJokes = state.userJokes.filter((j) => j.id !== action.payload);
+    },
+    refreshJoke: (
+      state,
+      action: PayloadAction<{ oldId: number; newJoke: Joke }>,
+    ) => {
+      state.jokes = state.jokes.filter((j) => j.id !== action.payload.oldId);
+      state.userJokes = state.userJokes.filter(
+        (j) => j.id !== action.payload.oldId,
+      );
 
-            const wasUserJoke = state.userJokes.some(j => j.id === action.payload.oldId);
-            if (wasUserJoke) {
-                state.userJokes.push(action.payload.newJoke);
-            } else {
-                state.jokes.push(action.payload.newJoke);
-            }
-        },
+      const wasUserJoke = state.userJokes.some(
+        (j) => j.id === action.payload.oldId,
+      );
+      if (wasUserJoke) {
+        state.userJokes.push(action.payload.newJoke);
+      } else {
+        state.jokes.push(action.payload.newJoke);
+      }
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchTenJokesThunk.pending, (state) => {
-                state.status = 'loading';
-            })
-            .addCase(fetchTenJokesThunk.fulfilled, (state, action) => {
-                state.jokes.push(...action.payload);
-                state.status = 'succeeded';
-            })
-            .addCase(fetchTenJokesThunk.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.error.message || 'Failed to fetch jokes';
-            });
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTenJokesThunk.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchTenJokesThunk.fulfilled, (state, action) => {
+        state.jokes.push(...action.payload);
+        state.status = 'succeeded';
+      })
+      .addCase(fetchTenJokesThunk.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to fetch jokes';
+      });
+  },
 });
 
 export const { addJoke, deleteJoke, refreshJoke } = jokesSlice.actions;
