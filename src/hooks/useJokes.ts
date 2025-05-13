@@ -59,25 +59,17 @@ export const useJokes = () => {
     }, [localJokes, jokes]);
 
     const handleAdd = async () => {
-
         try {
-            // Отримуємо випадковий жарт з API
             const res = await dispatch(fetchRandomJokeThunk()).unwrap();
 
-            // Перевіряємо, чи є такий жарт в списку (стейт + localStorage)
             if (res) {
                 const isDuplicate = [...localJokes, ...jokes].some(joke => joke.id === res.id);
 
-                // Якщо жарт унікальний, додаємо його
                 if (!isDuplicate) {
-                    // Додаємо новий жарт до Redux стейту
                     dispatch(addJoke(res));
-
-                    // Оновлюємо тільки локальний список жартів
                     const updatedLocalJokes = [...localJokes, res];
-                    localStorage.setItem('userJokes', JSON.stringify(updatedLocalJokes)); // Зберігаємо тільки нові жарти в localStorage
+                    localStorage.setItem('userJokes', JSON.stringify(updatedLocalJokes));
 
-                    // Оновлюємо стейт для відображення
                     setLocalJokes(updatedLocalJokes);
                     setCombinedJokes(updatedLocalJokes);
                 }
