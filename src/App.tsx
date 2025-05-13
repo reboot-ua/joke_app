@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {RootState, AppDispatch} from './store';
-import {fetchTenJokes, fetchRandomJoke, addJoke, Joke, deleteJoke} from './store/jokesSlice';
-import {Button, Container, Box, CircularProgress} from '@mui/material';
+import {addJoke, deleteJoke, fetchRandomJokeThunk, fetchTenJokesThunk} from './store/jokes/jokesSlice';
+import { Container, Box, CircularProgress} from '@mui/material';
 import JokeCard from './components/JokeCard';
+import CustomButton from "./components/CustomButton";
+import {Joke} from "./store/jokes/jokesTypes";
 
 const App = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -27,7 +29,7 @@ const App = () => {
                     let uniqueApiJokes: Joke[] = [];
 
                     while (uniqueApiJokes.length < jokesNeeded) {
-                        const apiJokes = await dispatch(fetchTenJokes()).unwrap();
+                        const apiJokes = await dispatch(fetchTenJokesThunk()).unwrap();
                         console.log(apiJokes, 'api')
                         const newUniqueJokes = apiJokes.filter(
                             (apiJoke: Joke) => !storedJokes.some(storedJoke => storedJoke.id === apiJoke.id)
@@ -60,7 +62,7 @@ const App = () => {
 
     const handleAdd = async () => {
         try {
-            const res = await dispatch(fetchRandomJoke()).unwrap();
+            const res = await dispatch(fetchRandomJokeThunk()).unwrap();
             if (res) {
                 const isDuplicate = [...localJokes, ...jokes].some(joke => joke.id === res.id);
 
@@ -90,7 +92,7 @@ const App = () => {
             const newJokes: Joke[] = [];
 
             while (newJokes.length < neededJokes) {
-                const response = await dispatch(fetchTenJokes()).unwrap();
+                const response = await dispatch(fetchTenJokesThunk()).unwrap();
 
                 for (const joke of response) {
                     if (!existingIds.has(joke.id)) {
@@ -116,7 +118,7 @@ const App = () => {
             const updatedLocalJokes: Joke[] = combinedJokes.filter((joke: Joke) => joke.id !== id);
             localStorage.setItem('userJokes', JSON.stringify(updatedLocalJokes));
             dispatch(deleteJoke(id));
-            const newJoke = await dispatch(fetchRandomJoke()).unwrap();
+            const newJoke = await dispatch(fetchRandomJokeThunk()).unwrap();
             if (newJoke) {
                 dispatch(addJoke(newJoke));
                 if (jokeIndex !== -1) {
@@ -158,14 +160,14 @@ const App = () => {
                         ))}
                     </Box>
 
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        sx={{mt: 4}}
+                    <CustomButton
                         onClick={handleLoadMore}
-                    >
-                        LOAD MORE
-                    </Button>
+                        label="LOAD MORE"
+                        variant="contained"
+                        color="white"
+                        backgroundColor="gray"
+                        sx={{mt: 5}}
+                    />
                 </>
             )}
         </Container>

@@ -1,6 +1,7 @@
 import { Card, CardContent, Typography, Stack, Button, Box } from '@mui/material';
-import { Joke } from '../store/jokesSlice';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import CustomButton from "./CustomButton";
+import {Joke} from "../store/jokes/jokesTypes";
 
 type Props = {
     joke: Joke;
@@ -22,6 +23,8 @@ const JokeCard: React.FC<Props> = ({ joke, onDelete, onAdd, onRefresh }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 bgcolor: '#aaa',
+                color: '#fff',
+                borderRadius: '20px',
             }}
         >
             <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -49,15 +52,28 @@ const JokeCard: React.FC<Props> = ({ joke, onDelete, onAdd, onRefresh }) => {
                             visibility: hover ? 'visible' : 'hidden',
                         }}
                     >
-                        <Button variant="outlined" color="error" onClick={onDelete}>
-                            Delete
-                        </Button>
-                        <Button variant="contained" onClick={onAdd}>
-                            Add
-                        </Button>
-                        <Button variant="outlined" onClick={onRefresh}>
-                            Refresh
-                        </Button>
+                        <CustomButton
+                            onClick={onDelete}
+                            label="Delete"
+                            variant="contained"
+                            color="black"
+                            backgroundColor="gray"
+                        />
+                        <CustomButton
+                            onClick={onAdd}
+                            label="ADD"
+                            variant="contained"
+                            color="black"
+                            backgroundColor="gray"
+
+                        />
+                        <CustomButton
+                            onClick={onRefresh}
+                            label="Refresh"
+                            variant="contained"
+                            color="black"
+                            backgroundColor="gray"
+                        />
                     </Stack>
                 </Box>
             </CardContent>
