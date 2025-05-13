@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Box, CircularProgress } from '@mui/material';
+import {Container, Box, CircularProgress, Typography} from '@mui/material';
 import JokeCard from './components/JokeCard';
 import CustomButton from './components/CustomButton';
 import useJokes from './hooks/useJokes';
@@ -16,6 +16,14 @@ const App = () => {
 
     return (
         <Container sx={{ mt: 5 }}>
+            <Typography
+                variant="h4"
+                component="h1"
+                align="center"
+                sx={{ mb: 4 }}
+            >
+                Welcome to the Joke App
+            </Typography>
             {loading ? (
                 <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
                     <CircularProgress />
