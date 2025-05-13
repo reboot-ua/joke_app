@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
 import { fetchRandomJoke, fetchTenJokes } from './api/jokesApi';
 import { JokesState, Joke } from './jokesTypes';
 
@@ -41,10 +41,17 @@ const jokesSlice = createSlice({
         deleteJoke: (state, action) => {
             state.jokes = state.jokes.filter(j => j.id !== action.payload);
             state.userJokes = state.userJokes.filter(j => j.id !== action.payload);
-            localStorage.setItem('userJokes', JSON.stringify(state.userJokes));
         },
-        refreshJoke: (state, action) => {
-            state.jokes = state.jokes.filter(j => j.id !== action.payload);
+        refreshJoke: (state, action: PayloadAction<{ oldId: number; newJoke: Joke }>) => {
+            state.jokes = state.jokes.filter(j => j.id !== action.payload.oldId);
+            state.userJokes = state.userJokes.filter(j => j.id !== action.payload.oldId);
+
+            const wasUserJoke = state.userJokes.some(j => j.id === action.payload.oldId);
+            if (wasUserJoke) {
+                state.userJokes.push(action.payload.newJoke);
+            } else {
+                state.jokes.push(action.payload.newJoke);
+            }
         },
     },
     extraReducers: (builder) => {

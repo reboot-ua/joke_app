@@ -1,45 +1,52 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import {addJoke, deleteJoke, fetchRandomJokeThunk, fetchTenJokesThunk} from '../store/jokes/jokesSlice';
+import {addJoke, deleteJoke, fetchRandomJokeThunk, fetchTenJokesThunk, refreshJoke} from '../store/jokes/jokesSlice';
 import { Joke } from '../store/jokes/jokesTypes';
 
 export const useJokes = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { jokes, status } = useSelector((state: RootState) => state.jokes);
-    const [loading, setLoading] = useState(false);
+    const {jokes, status} = useSelector((state: RootState) => state.jokes);
+    const [loading, setLoading] = useState<boolean>(false);
     const [localJokes, setLocalJokes] = useState<Joke[]>([]);
     const [combinedJokes, setCombinedJokes] = useState<Joke[]>([]);
 
     useEffect(() => {
         const loadInitialData = async () => {
             setLoading(true);
-            const storedJokes: Joke[] = JSON.parse(localStorage.getItem('userJokes') || '[]');
+            const storedJokes: Joke[] = JSON.parse(localStorage.getItem('userJokes') || '[]').slice(0, 10);
             setLocalJokes(storedJokes);
 
-            const jokesNeeded = Math.max(0, 10 - storedJokes.length);
-
-            if (jokesNeeded > 0) {
-                try {
-                    let uniqueApiJokes: Joke[] = [];
-
-                    while (uniqueApiJokes.length < jokesNeeded) {
-                        const apiJokes = await dispatch(fetchTenJokesThunk()).unwrap();
-                        const newUniqueJokes = apiJokes.filter(
-                            (apiJoke: Joke) => !storedJokes.some(storedJoke => storedJoke.id === apiJoke.id)
-                        );
-
-                        uniqueApiJokes = [...uniqueApiJokes, ...newUniqueJokes].slice(0, jokesNeeded);
-                    }
-
-                    uniqueApiJokes.forEach((joke: Joke) => {
-                        dispatch(addJoke(joke));
-                    });
-                } catch (error) {
-                    console.error('Failed to load jokes:', error);
-                }
+            if (storedJokes.length >= 10) {
+                setCombinedJokes(storedJokes);
+                setLoading(false);
+                return;
             }
-            setLoading(false);
+
+            const jokesNeeded = 10 - storedJokes.length;
+
+            try {
+                let uniqueApiJokes: Joke[] = [];
+
+                while (uniqueApiJokes.length < jokesNeeded) {
+                    const apiJokes = await dispatch(fetchTenJokesThunk()).unwrap();
+                    const newUniqueJokes = apiJokes.filter(
+                        (apiJoke: Joke) => !storedJokes.some(storedJoke => storedJoke.id === apiJoke.id)
+                    );
+                    uniqueApiJokes = [...uniqueApiJokes, ...newUniqueJokes].slice(0, jokesNeeded);
+                }
+
+                uniqueApiJokes.forEach((joke: Joke) => {
+                    dispatch(addJoke(joke));
+                });
+
+                setCombinedJokes([...storedJokes, ...uniqueApiJokes]);
+
+            } catch (error) {
+                console.error('Failed to load jokes:', error);
+            } finally {
+                setLoading(false);
+            }
         };
 
         if (status === 'idle') {
@@ -52,17 +59,31 @@ export const useJokes = () => {
     }, [localJokes, jokes]);
 
     const handleAdd = async () => {
+
         try {
+            // Отримуємо випадковий жарт з API
             const res = await dispatch(fetchRandomJokeThunk()).unwrap();
+
+            // Перевіряємо, чи є такий жарт в списку (стейт + localStorage)
             if (res) {
                 const isDuplicate = [...localJokes, ...jokes].some(joke => joke.id === res.id);
 
+                // Якщо жарт унікальний, додаємо його
                 if (!isDuplicate) {
-                    const updatedJokes = [...localJokes, res];
-                    localStorage.setItem('userJokes', JSON.stringify(updatedJokes));
-                    setLocalJokes(updatedJokes);
+                    // Додаємо новий жарт до Redux стейту
+                    dispatch(addJoke(res));
+
+                    // Оновлюємо тільки локальний список жартів
+                    const updatedLocalJokes = [...localJokes, res];
+                    localStorage.setItem('userJokes', JSON.stringify(updatedLocalJokes)); // Зберігаємо тільки нові жарти в localStorage
+
+                    // Оновлюємо стейт для відображення
+                    setLocalJokes(updatedLocalJokes);
+                    setCombinedJokes(updatedLocalJokes);
                 }
             }
+        } catch (error) {
+            console.error('Error adding joke:', error);
         } finally {
         }
     };
@@ -71,6 +92,7 @@ export const useJokes = () => {
         const updatedJokes = localJokes.filter(joke => joke.id !== id);
         localStorage.setItem('userJokes', JSON.stringify(updatedJokes));
         setLocalJokes(updatedJokes);
+
         dispatch(deleteJoke(id));
     };
 
@@ -83,6 +105,7 @@ export const useJokes = () => {
 
             while (newJokes.length < neededJokes) {
                 const response = await dispatch(fetchTenJokesThunk()).unwrap();
+
                 for (const joke of response) {
                     if (!existingIds.has(joke.id)) {
                         newJokes.push(joke);
@@ -91,7 +114,6 @@ export const useJokes = () => {
                     }
                 }
             }
-
             if (newJokes.length > 0) {
                 newJokes.forEach(joke => dispatch(addJoke(joke)));
                 setCombinedJokes([...allExistingJokes, ...newJokes]);
@@ -101,32 +123,49 @@ export const useJokes = () => {
         } finally {
         }
     };
-
     const handleRefresh = async (id: number) => {
+
         try {
-            const jokeIndex = combinedJokes.findIndex((joke: Joke) => joke.id === id);
-            const updatedLocalJokes: Joke[] = combinedJokes.filter((joke: Joke) => joke.id !== id);
-            localStorage.setItem('userJokes', JSON.stringify(updatedLocalJokes));
-            dispatch(deleteJoke(id));
+            console.log(combinedJokes, 'local JOKES');
+
+            const storedJokes: Joke[] = JSON.parse(localStorage.getItem('userJokes') || '[]');
+            const jokeIndexInLocalStorage = storedJokes.findIndex((joke: Joke) => joke.id === id);
+            const jokeIndexInState = combinedJokes.findIndex((joke: Joke) => joke.id === id);
+
+            console.log(jokeIndexInLocalStorage, 'jokeIndexInLocalStorage');
+            console.log(jokeIndexInState, 'jokeIndexInState');
 
             const newJoke = await dispatch(fetchRandomJokeThunk()).unwrap();
+            console.log(newJoke, 'new joke add');
+
             if (newJoke) {
-                dispatch(addJoke(newJoke));
-                if (jokeIndex !== -1) {
-                    updatedLocalJokes.splice(jokeIndex, 0, newJoke);
-                } else {
-                    updatedLocalJokes.push(newJoke);
+                if (jokeIndexInState !== -1) {
+                    dispatch(deleteJoke(id));
                 }
 
-                localStorage.setItem('userJokes', JSON.stringify(updatedLocalJokes));
-                setCombinedJokes(updatedLocalJokes);
+                dispatch(addJoke(newJoke));
+
+                if (jokeIndexInLocalStorage !== -1) {
+                    storedJokes.splice(jokeIndexInLocalStorage, 1);
+                    storedJokes.splice(jokeIndexInLocalStorage, 0, newJoke);
+                    localStorage.setItem('userJokes', JSON.stringify(storedJokes));
+                    setLocalJokes(storedJokes);
+                } else {
+                    storedJokes.push(newJoke);
+                    localStorage.setItem('userJokes', JSON.stringify(storedJokes));
+                    setLocalJokes(storedJokes);
+                }
+                setCombinedJokes(prevState => {
+                    const updatedJokes = prevState.map(joke => (joke.id === id ? newJoke : joke));
+                    return updatedJokes;
+                });
             }
         } catch (error) {
             console.error('Error fetching new joke:', error);
         } finally {
+            console.log('refresh complete');
         }
     };
-
     return {
         loading,
         combinedJokes,
