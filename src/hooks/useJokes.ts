@@ -40,8 +40,6 @@ export const useJokes = () => {
 
     try {
       const uniqueApiJokes = await fetchUniqueJokes(existingIds, jokesNeeded);
-      console.log(uniqueApiJokes.length);
-      console.log(storedJokes);
       setCombinedJokes([...storedJokes, ...uniqueApiJokes].slice(0, 10));
       uniqueApiJokes.forEach(joke => dispatch(addJoke(joke)));
     } catch (error) {
@@ -53,8 +51,6 @@ export const useJokes = () => {
 
   useEffect(() => {
     setCombinedJokes([...localJokes, ...reduxJokes]);
-    console.log(localJokes, 'localJokes');
-    console.log(reduxJokes, 'reduxJokes');
   }, [localJokes, reduxJokes]);
 
   useEffect(() => {
