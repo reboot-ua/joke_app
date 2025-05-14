@@ -2,7 +2,7 @@ import React from 'react';
 import { Container, Box, CircularProgress, Typography } from '@mui/material';
 import JokeCard from './components/JokeCard';
 import CustomButton from './components/CustomButton';
-import useJokes from './hooks/useJokes';
+import { useJokes } from './hooks/useJokes';
 
 const App = () => {
   const {
