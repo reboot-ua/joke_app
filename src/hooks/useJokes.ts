@@ -89,7 +89,8 @@ export const useJokes = () => {
     setLocalJokes,
     setStoredJokes,
     setCombinedJokes,
-    fetchNewRandomJoke
+    fetchNewRandomJoke,
+    setLoading
   );
 
   return {
